@@ -1,7 +1,12 @@
 import pandas as pd
 import datetime as dt
 import pandas_datareader.data as pdata
-%matplotlib inline
+import matplotlib.pyplot as plt
 
-yahoo = pdata.get_data_yahoo("YHOO", "01/01/2010", dt.datetime.today)
-yahoo.plot()
+data = pdata.get_data_yahoo(symbols="yhoo",
+                            start="01/01/2010",
+                            end="01/01/2015")
+
+plt.figure()
+data['Adj Close'].plot()
+plt.show()
