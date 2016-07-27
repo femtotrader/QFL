@@ -1,0 +1,46 @@
+from airflow.models import DAG
+from airflow.operators import DummyOperator, BashOperator, PythonOperator
+from datetime import datetime, timedelta
+import os
+import sys
+
+# Directly import QFL (this seems obnoxious, why can't I do it outside?)
+# home = os.path.expanduser("~")
+# local_repo = os.path.join("Documents", "Code", "qfl")
+# sys.path.append(os.path.join(home, local_repo))
+from qfl.etl.data_ingest import test_airflow, daily_equity_price_ingest
+
+
+default_args = {
+    'owner': 'airflow',
+    'depends_on_past': False,
+    'start_date': datetime(2015, 8, 1),
+    'email': ['beifert@gmail.com'],
+    'email_on_failure': False,
+    'email_on_retry': False,
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5),
+    # 'queue': 'bash_queue',
+    # 'pool': 'backfill',
+    # 'priority_weight': 10,
+    # 'end_date': datetime(2016, 1, 1),
+}
+
+dag = DAG('etl_historical',
+          start_date=datetime(2016, 05, 01),
+          schedule_interval=None,
+          default_args=default_args)
+
+t1 = PythonOperator(task_id='test_airflow',
+                    python_callable=test_airflow,
+                    dag=dag)
+
+t2 = PythonOperator(task_id='daily_equity_price_ingest',
+                    python_callable=daily_equity_price_ingest,
+                    dag=dag)
+
+run_this_last = DummyOperator(task_id='run_this_last', dag=dag)
+
+t2.set_upstream(t1)
+
+run_this_last.set_upstream(t2)
